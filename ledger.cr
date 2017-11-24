@@ -5,7 +5,7 @@ require "xml"
 
 # Crystal wrapper module for calling ledger
 class Ledger
-  def initialize( binary : String = "ledger", ledger_file : String = ENV[ "LEDGER_FILE" ] )
+  def initialize( binary : String = "ledger", ledger_file : String = ENV[ "LEDGER_FILE" ] ||= "/home/cycojesus/org/comptes.ledger" )
     @binary = binary
     @file = ledger_file
   end
