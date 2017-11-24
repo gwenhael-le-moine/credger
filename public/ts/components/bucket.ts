@@ -72,27 +72,6 @@ ${response.data.values.map(function(transaction) { return format_transaction(tra
                 ctrl.raw_data = _(response.data)
                   .sortBy((account) => { return account.amount; })
                   .reverse();
-                ctrl.raw_total = _(response.data).reduce((memo, account) => { return memo + account.amount; }, 0);
-
-                ctrl.total_detailed = _.chain(ctrl.raw_data)
-                  .groupBy((account) => {
-                    return account.account.split(':')[0];
-                  })
-                  .each((category) => {
-                    category.total = _(category).reduce((memo, account) => {
-                      return memo + account.amount;
-                    }, 0);
-                  })
-                  .value();
-                ctrl.total_detailed = _.chain(ctrl.total_detailed)
-                  .keys()
-                  .map((key) => {
-                    return {
-                      account: key,
-                      amount: ctrl.total_detailed[key].total
-                    };
-                  })
-                  .value();
 
                 ctrl.graph_options.chart.height = 60 + (25 * ctrl.raw_data.length);
 
@@ -109,17 +88,14 @@ ${response.data.values.map(function(transaction) { return format_transaction(tra
     ],
 
     template: `
-  <div class="bucket">
-    <div class="tollbar">
-      <span ng:repeat="account in $ctrl.total_detailed">{{account.account}} = {{account.amount | number:2}} €</span>
-    </div>
-    <div class="content">
-      <div class="graph">
-        <nvd3 data="$ctrl.data"
-              options="$ctrl.graph_options">
-        </nvd3>
-      </div>
+<div class="bucket">
+  <div class="content">
+    <div class="graph">
+      <nvd3 data="$ctrl.data"
+options="$ctrl.graph_options">
+</nvd3>
     </div>
   </div>
+</div>
 `
   });
