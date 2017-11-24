@@ -5,6 +5,8 @@ require "./ledger"
 CURRENCY = "€"
 SEPARATOR = ","
 
+ENV["PORT"] ||= "3000"
+
 ledger = Ledger.new
 
 # Matches GET "http://host:port/"
@@ -53,4 +55,4 @@ get "/api/ledger/register" do |env|
     .to_json
 end
 
-Kemal.run
+Kemal.run( ENV["PORT"].to_i )
