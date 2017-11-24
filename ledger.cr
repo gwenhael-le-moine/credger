@@ -1,11 +1,11 @@
 # encoding: utf-8
 
 require "csv"
-require "xml"
 
 # Crystal wrapper module for calling ledger
 class Ledger
-  def initialize( binary : String = "ledger", ledger_file : String = ENV[ "LEDGER_FILE" ] ||= "/home/cycojesus/org/comptes.ledger" )
+  def initialize( binary : String = "ledger",
+                  ledger_file : String = ENV[ "LEDGER_FILE" ] ||= "/home/cycojesus/org/comptes.ledger" )
     @binary = binary
     @file = ledger_file
   end
@@ -39,7 +39,10 @@ class Ledger
       .sort_by { |a| a.size }
   end
 
-  def balance( cleared : Bool = false, depth : Int32 = 9999, period : String = nil, categories : String = "" ) : Array( NamedTuple( account: String, amount: Float64 ) )
+  def balance( cleared : Bool = false,
+               depth : Int32 = 9999,
+               period : String = nil,
+               categories : String = "" ) : Array( NamedTuple( account: String, amount: Float64 ) )
     period = period.nil? ? "" : "-p '#{period}'"
     depth = depth.nil? ? "" : "--depth #{depth}"
     operation = cleared ? "cleared" : "balance"
@@ -55,7 +58,8 @@ class Ledger
     end
   end
 
-  def graph_values( period : String = "", categories : Array(String) = ["Expenses"] ) : Hash( String, Array( NamedTuple( date: String, amount: String, currency: String ) ) )
+  def graph_values( period : String = "",
+                    categories : Array(String) = ["Expenses"] ) : Hash( String, Array( NamedTuple( date: String, amount: String, currency: String ) ) )
     period = period == "" ? "" : "-p '#{period}'"
 
     result = {} of String => Array(NamedTuple(date: String, amount: String, currency: String))
@@ -72,7 +76,8 @@ class Ledger
     result
   end
 
-  def register( period : String = "", categories : Array(String) = ["Expenses"] ) : Array( NamedTuple( date: String, payee: String, account: String, amount: String, currency: String ) )
+  def register( period : String = "",
+                categories : Array(String) = ["Expenses"] ) : Array( NamedTuple( date: String, payee: String, account: String, amount: String, currency: String ) )
     period = period == "" ? "" : "-p '#{period}'"
 
     CSV
