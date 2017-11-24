@@ -7,13 +7,17 @@ SEPARATOR = ","
 
 ENV["PORT"] ||= "3000"
 
+WD = File.dirname( Process.executable_path.to_s )
+
 ledger = Ledger.new
+
+public_folder( "#{WD}/public" )
 
 # Matches GET "http://host:port/"
 get "/" do |env|
   env.response.content_type = "text/html"
 
-  send_file( env, "./public/index.html" )
+  send_file( env, "#{WD}/public/index.html" )
 end
 
 get "/api/ledger/version" do |env|
