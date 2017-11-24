@@ -30,17 +30,44 @@ app.component('bucket',
             duration: 500,
             labelThreshold: 0.01,
             labelSunbeamLayout: true,
-            labelsOutside: true
+            labelsOutside: true,
+            multibar: {
+              dispatch: {
+                elementClick: (event) => {
+                  API.register(ctrl.period, event.data.account)
+                    .then(function success(response) {
+                      let format_transaction = (transaction) => {
+                        return `
+<tr>
+<td>${transaction.date}</td>
+<td>${transaction.payee}</td>
+<td style="text-align: right;">${transaction.amount} ${transaction.currency}</td>
+</tr>`;
+                      };
+
+                      swal({
+                        title: response.data.key,
+                        html: `<table style="width: 100%;">
+<thead>
+<tr>
+<td>Date</td><td>Payee</td><td>Amount</td>
+</tr>
+</thead>
+<tbody>
+${response.data.values.map(function(transaction) { return format_transaction(transaction); }).join("")}
+</tbody>
+<tfoot><td></td><td>Total</td><td style="text-align: right;">${event.data.amount} €</td></tfoot>
+</table>`});
+                    }, function error(response) { alert("error!"); });
+                }
+              }
+            }
           }
         };
 
         ctrl.$onChanges = (changes) => {
           if (changes.period && changes.period.currentValue != undefined) {
-            API.balance({
-              period: ctrl.period,
-              categories: ctrl.categories,
-              depth: ctrl.depth
-            })
+            API.balance(ctrl.period, ctrl.categories, ctrl.depth)
               .then((response) => {
                 ctrl.raw_data = _(response.data)
                   .sortBy((account) => { return account.amount; })
@@ -81,7 +108,7 @@ app.component('bucket',
       }
     ],
 
-  template: `
+    template: `
   <div class="bucket">
     <div class="tollbar">
       <span ng:repeat="account in $ctrl.total_detailed">{{account.account}} = {{account.amount | number:2}} €</span>

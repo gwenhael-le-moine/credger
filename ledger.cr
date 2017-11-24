@@ -1,6 +1,7 @@
 # encoding: utf-8
 
 require "csv"
+require "xml"
 
 # Crystal wrapper module for calling ledger
 class Ledger
@@ -69,5 +70,19 @@ class Ledger
     end
 
     result
+  end
+
+  def register( period : String = "", categories : Array(String) = ["Expenses"] ) : Array( NamedTuple( date: String, payee: String, account: String, amount: String, currency: String ) )
+    period = period == "" ? "" : "-p '#{period}'"
+
+    CSV
+      .parse( run( "--exchange '#{CURRENCY}' #{period}", "csv --no-revalued", categories.join(" ") ) )
+      .map do |row|
+      { date: row[ 0 ],
+        payee: row[ 2 ],
+        account: row[ 3 ],
+        amount: row[ 5 ],
+        currency: row[ 4 ] }
+    end
   end
 end

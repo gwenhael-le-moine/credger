@@ -5,8 +5,8 @@ app.component('dashboard',
         let ctrl = this;
         ctrl.graphed_accounts = ['Expenses', 'Income'];
 
-        let retrieve_graph_values = (params) => {
-          API.graph_values(params)
+        let retrieve_graph_values = (period, categories) => {
+          API.graph_values(period, categories)
             .then((response) => {
               ctrl.periods = [];
 
@@ -111,10 +111,7 @@ app.component('dashboard',
             ctrl.accounts = ctrl.raw_accounts.map((account_ary) => { return account_ary.join(':'); });
           });
 
-        retrieve_graph_values({
-          period: '',
-          categories: ctrl.graphed_accounts.join(' ')
-        });
+        retrieve_graph_values('', ctrl.graphed_accounts.join(' '));
       }
     ],
 

@@ -3,52 +3,35 @@ app.service('API',
     function($http) {
       let API = this;
 
-      API.balance = function(params) {
+      API.balance = _.memoize(function(period, categories, depth) {
         return $http.get('/api/ledger/balance', {
           params: {
-            period: params.period,
-            categories: params.categories,
-            depth: params.depth
+            period: period,
+            categories: categories,
+            depth: depth
           }
         });
-      };
+      });
 
-      API.register = function(params) {
+      API.register = _.memoize(function(period, categories) {
         return $http.get('/api/ledger/register', {
           params: {
-            period: params.period,
-            categories: params.categories
+            period: period,
+            categories: categories
           }
         });
-      };
+      });
 
-      API.graph_values = function(params) {
+      API.graph_values = _.memoize(function(period, categories) {
         return $http.get('/api/ledger/graph_values', {
           params: {
-            period: params.period,
-            categories: params.categories
+            period: period,
+            categories: categories
           }
         });
-      };
+      });
 
-      API.budget = function(params) {
-        return $http.get('/api/ledger/budget', {
-          params: {
-            period: params.period,
-            categories: params.categories
-          }
-        });
-      };
-
-      API.dates_salaries = function() {
-        return $http.get('/ai/ledger/dates_salaries');
-      };
-
-      API.accounts = function() {
+      API.accounts = _.memoize(function() {
         return $http.get('/api/ledger/accounts');
-      };
-
-      API.cleared = function() {
-        return $http.get('/api/ledger/cleared');
-      };
+      });
     }]);
