@@ -9,5 +9,12 @@ public/js/app.js: public/ts/app.ts public/ts/services/API.ts public/ts/component
 public/js/app.min.js: public/js/app.js
 	./public/vendor/node_modules/.bin/google-closure-compiler-js $^ > $@
 
+pull-deps:
+	crystal deps install
+	cd public/vendor; npm install
+
 clean:
 	-rm public/js/app.min.js public/js/app.js
+
+clean-all:
+	-rm -fr lib/ public/vendor/node_modules
