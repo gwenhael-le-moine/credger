@@ -38,26 +38,27 @@ app.component('bucket',
                     .then(function success(response) {
                       let format_transaction = (transaction) => {
                         return `
-<tr>
-<td>${transaction.date}</td>
-<td>${transaction.payee}</td>
-<td style="text-align: right;">${transaction.amount} ${transaction.currency}</td>
-</tr>`;
+  <tr>
+    <td>${transaction.date}</td>
+    <td>${transaction.payee}</td>
+    <td style="text-align: right;">${transaction.amount} ${transaction.currency}</td>
+  </tr>`;
                       };
 
                       swal({
                         title: response.data.key,
-                        html: `<table style="width: 100%;">
-<thead>
-<tr>
-<td>Date</td><td>Payee</td><td>Amount</td>
-</tr>
-</thead>
-<tbody>
-${response.data.values.map(function(transaction) { return format_transaction(transaction); }).join("")}
-</tbody>
-<tfoot><td></td><td>Total</td><td style="text-align: right;">${event.data.amount} €</td></tfoot>
-</table>`});
+                        html: `
+  <table style="width: 100%;">
+    <thead>
+      <tr>
+        <td>Date</td><td>Payee</td><td>Amount</td>
+      </tr>
+    </thead>
+    <tbody>
+      ${response.data.values.map(function(transaction) { return format_transaction(transaction); }).join("")}
+    </tbody>
+    <tfoot><td></td><td>Total</td><td style="text-align: right;">${event.data.amount} €</td></tfoot>
+  </table>`});
                     }, function error(response) { alert("error!"); });
                 }
               }
@@ -87,15 +88,15 @@ ${response.data.values.map(function(transaction) { return format_transaction(tra
       }
     ],
 
-    template: `
-<div class="bucket">
-  <div class="content">
-    <div class="graph">
-      <nvd3 data="$ctrl.data"
-options="$ctrl.graph_options">
-</nvd3>
+  template: `
+  <div class="bucket">
+    <div class="content">
+      <div class="graph">
+        <nvd3 data="$ctrl.data"
+              options="$ctrl.graph_options">
+        </nvd3>
+      </div>
     </div>
   </div>
-</div>
 `
   });

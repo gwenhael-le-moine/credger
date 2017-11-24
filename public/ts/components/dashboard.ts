@@ -10,9 +10,8 @@ app.component('dashboard',
             .then((response) => {
               ctrl.periods = [];
 
-              let largest_cat = _(response.data).reduce((memo, cat) => { return cat.length > memo.length ? cat : memo; }, []);
-
-              _.chain(largest_cat)
+              _.chain(response.data)
+                .reduce((memo, cat) => { return cat.length > memo.length ? cat : memo; }, [])
                 .pluck('date')
                 .each((date) => {
                   _(response.data).each((cat) => {
@@ -33,71 +32,64 @@ app.component('dashboard',
                 });
               });
 
-              ctrl.graphiques = {
-                monthly_values: {
-                  options: {
-                    chart: {
-                      type: 'multiBarChart',
-                      height: 300,
-                      showControls: false,
-                      showLegend: true,
-                      showLabels: true,
-                      showValues: true,
-                      showYAxis: false,
+              ctrl.graphique = {
+                options: {
+                  chart: {
+                    type: 'multiBarChart',
+                    height: 300,
+                    showControls: false,
+                    showLegend: true,
+                    showLabels: true,
+                    showValues: true,
+                    showYAxis: false,
 
-                      x: (d) => { return d.x; },
-                      y: (d) => { return d.y; },
-                      valueFormat: (d) => { return `${d} €`; },
+                    x: (d) => { return d.x; },
+                    y: (d) => { return d.y; },
+                    valueFormat: (d) => { return `${d} €`; },
 
-                      xAxis: {
-                        tickFormat: (d) => {
-                          return `${d}${d == ctrl.period ? '*' : ''}`;
-                        }
-                      },
-                      stacked: false,
-                      duration: 500,
-                      reduceXTicks: false,
-                      rotateLabels: -67,
-                      labelSunbeamLayout: true,
-                      useInteractiveGuideline: true,
-                      multibar: {
-                        dispatch: {
-                          elementClick: (event) => {
-                            console.log('change period')
-                            console.log(ctrl.period)
-
-                            ctrl.period = event.data.x;
-
-                            console.log(ctrl.period)
-                          }
+                    xAxis: {
+                      tickFormat: (d) => {
+                        return `${d}${d == ctrl.period ? '*' : ''}`;
+                      }
+                    },
+                    stacked: false,
+                    duration: 500,
+                    reduceXTicks: false,
+                    rotateLabels: -67,
+                    labelSunbeamLayout: true,
+                    useInteractiveGuideline: true,
+                    multibar: {
+                      dispatch: {
+                        elementClick: function(event) {
+                          ctrl.period = event.data.x; // FIXME: doesn't trigger data-binding
                         }
                       }
                     }
-                  },
-                  data: _.chain(response.data)
-                    .keys()
-                    .reverse()
-                    .map((key) => {
-                      let multiplicator = (key == "Income") ? -1 : 1;
-                      return {
-                        key: key,
-                        values: _.chain(response.data[key]).map((value) => {
-                          let date = new Date(value.date);
-                          let period = date.getFullYear() + '-' + (date.getMonth() < 9 ? '0' : '') + (date.getMonth() + 1);
-                          ctrl.periods.push(period);
+                  }
+                },
+                data: _.chain(response.data)
+                  .keys()
+                  .reverse()
+                  .map((key) => {
+                    let multiplicator = (key == "Income") ? -1 : 1;
+                    return {
+                      key: key,
+                      values: _.chain(response.data[key]).map((value) => {
+                        let date = new Date(value.date);
+                        let period = date.getFullYear() + '-' + (date.getMonth() < 9 ? '0' : '') + (date.getMonth() + 1);
+                        ctrl.periods.push(period);
 
-                          return {
-                            key: key,
-                            x: period,
-                            y: parseInt(value.amount) * multiplicator
-                          };
-                        })
-                          .sortBy((item) => { return item.x; })
-                          .value()
-                      };
-                    })
-                    .value()
-                }
+                        return {
+                          key: key,
+                          x: period,
+                          y: parseInt(value.amount) * multiplicator
+                        };
+                      })
+                        .sortBy((item) => { return item.x; })
+                        .value()
+                    };
+                  })
+                  .value()
               };
 
               ctrl.periods = _.chain(ctrl.periods).uniq().sort().reverse().value();
@@ -124,9 +116,9 @@ app.component('dashboard',
         </select>
       </div>
       <div class="graph" style="width: 80%; float: left;">
-        <nvd3 data="$ctrl.graphiques.monthly_values.data"
-              options="$ctrl.graphiques.monthly_values.options">
-        </nvd3>
+        <nvd3 data="$ctrl.graphique.data"
+              options="$ctrl.graphique.options">
+        </nvd3>{{$ctrl.period}}
       </div>
     </div>
 
@@ -134,7 +126,7 @@ app.component('dashboard',
       <select ng:options="p as p | amDateFormat:'MMMM YYYY' for p  in $ctrl.periods" ng:model="$ctrl.period"></select>
     </h1>
 
-<bucket categories="'Expenses Income Equity Liabilities'" period="$ctrl.period"></bucket>
+    <bucket categories="'Expenses Income Equity Liabilities'" period="$ctrl.period"></bucket>
   </div>
 `
   });
