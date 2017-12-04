@@ -3,10 +3,28 @@ app.component('dashboard',
     controller: ['$filter', 'API',
       function($filter, API) {
         let ctrl = this;
-        ctrl.graphed_accounts = ['Expenses', 'Income'];
 
-        let retrieve_graph_values = (period, categories) => {
-          API.graph_values(period, categories)
+        ctrl.compute_selected_accounts = () => {
+          ctrl.graphed_accounts = _.chain(ctrl.main_accounts_depths)
+            .map((account) => {
+              if (account.depth < 1) {
+                return null;
+              } else {
+                return _(ctrl.raw_accounts)
+                  .select((account2) => {
+                    return account2[0] == account.name && account2.length == account.depth;
+                  })
+                  .map((account3) => { return account3.join(":"); });
+              }
+            })
+            .compact()
+            .flatten()
+            .value();
+          ctrl.retrieve_graph_values(ctrl.graphed_accounts);
+        };
+
+        ctrl.retrieve_graph_values = (categories) => {
+          API.graph_values("", categories.join(" "))
             .then((response) => {
               ctrl.periods = [];
 
@@ -24,20 +42,20 @@ app.component('dashboard',
                       });
                     }
                   });
+                })
+                .each((cat) => {
+                  cat = _(cat).sortBy((month) => {
+                    return month.date;
+                  });
                 });
-
-              _(response.data).each((cat) => {
-                cat = _(cat).sortBy((month) => {
-                  return month.date;
-                });
-              });
 
               ctrl.graphique = {
                 options: {
                   chart: {
                     type: 'multiBarChart',
                     height: 300,
-                    showControls: false,
+                    stacked: true,
+                    showControls: true,
                     showLegend: true,
                     showLabels: true,
                     showValues: true,
@@ -52,7 +70,6 @@ app.component('dashboard',
                         return `${d}${d == ctrl.period ? '*' : ''}`;
                       }
                     },
-                    stacked: false,
                     duration: 500,
                     reduceXTicks: false,
                     rotateLabels: -67,
@@ -71,7 +88,6 @@ app.component('dashboard',
                   .keys()
                   .reverse()
                   .map((key) => {
-                    let multiplicator = (key == "Income") ? -1 : 1;
                     return {
                       key: key,
                       values: _.chain(response.data[key]).map((value) => {
@@ -82,7 +98,7 @@ app.component('dashboard',
                         return {
                           key: key,
                           x: period,
-                          y: parseInt(value.amount) * multiplicator
+                          y: parseInt(value.amount)
                         };
                       })
                         .sortBy((item) => { return item.x; })
@@ -99,34 +115,58 @@ app.component('dashboard',
 
         API.accounts()
           .then((response) => {
-            ctrl.raw_accounts = response.data;
+            ctrl.raw_accounts = response.data.sort((account) => { return account.length; }).reverse();
             ctrl.accounts = ctrl.raw_accounts.map((account_ary) => { return account_ary.join(':'); });
-          });
 
-        retrieve_graph_values('', ctrl.graphed_accounts.join(' '));
+            ctrl.main_accounts_depths = _.chain(ctrl.raw_accounts)
+              .select((account) => { return account.length == 1; })
+              .map((account) => {
+                return {
+                  name: account[0],
+                  depth: _(['Expenses', 'Income']).contains(account[0]) ? 1 : 0,
+                  max_depth: _.chain(ctrl.raw_accounts)
+                    .select((account2) => { return account2[0] == account[0] })
+                    .reduce((memo, account3) => { return account3.length > memo ? account3.length : memo; }, 0)
+                    .value()
+                };
+              })
+              .value();
+
+            ctrl.compute_selected_accounts();
+          });
       }
     ],
 
     template: `
-  <div class="dashboard">
-    <div class="global-graph" style="height: 300px;">
-      <div class="accounts" style="width: 20%; height: 100%; float: left;">
-        <select style="height: 100%;" multiple ng:model="$ctrl.graphed_accounts">
-          <option ng:repeat="account in $ctrl.accounts">{{account}}</option>
-        </select>
+    <div class="dashboard">
+      <div class="global-graph" style="height: 300px;">
+        <div class="accounts" style="width: 20%; height: 100%; float: left;">
+          <ul>
+            <li ng:repeat="account in $ctrl.main_accounts_depths">
+              <label>{{account.name}} depth</label>
+              <rzslider rz-slider-options="{floor: 0, ceil: account.max_depth, onEnd: $ctrl.compute_selected_accounts}" rz-slider:model="account.depth"></rzslider>
+            </li>
+          </ul>
+        </div>
+
+        <div class="accounts" style="width: 20%; height: 100%; float: left;">
+          <select style="height: 100%;" multiple ng:model="$ctrl.graphed_accounts" ng:change="$ctrl.retrieve_graph_values($ctrl.graphed_accounts)">
+            <option ng:repeat="account in $ctrl.accounts">{{account}}</option>
+          </select>
+        </div>
+
+        <div class="graph" style="width: 60%; float: left;">
+          <nvd3 data="$ctrl.graphique.data"
+                options="$ctrl.graphique.options">
+          </nvd3>{{$ctrl.period}}
+        </div>
       </div>
-      <div class="graph" style="width: 80%; float: left;">
-        <nvd3 data="$ctrl.graphique.data"
-              options="$ctrl.graphique.options">
-        </nvd3>{{$ctrl.period}}
-      </div>
+
+      <h1 style="text-align: center;">
+        <select ng:options="p as p | amDateFormat:'MMMM YYYY' for p  in $ctrl.periods" ng:model="$ctrl.period"></select>
+      </h1>
+
+      <bucket categories="'Expenses Income Equity Liabilities'" period="$ctrl.period"></bucket>
     </div>
-
-    <h1 style="text-align: center;">
-      <select ng:options="p as p | amDateFormat:'MMMM YYYY' for p  in $ctrl.periods" ng:model="$ctrl.period"></select>
-    </h1>
-
-    <bucket categories="'Expenses Income Equity Liabilities'" period="$ctrl.period"></bucket>
-  </div>
 `
   });

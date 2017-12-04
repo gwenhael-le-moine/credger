@@ -3,6 +3,7 @@ var app = angular.module('app',
     'nvd3',
     'angularMoment',
     'chieffancypants.loadingBar',
+    'rzModule',
   ])
   .config(['$stateProvider', '$urlRouterProvider',
     function($stateProvider, $urlRouterProvider) {
