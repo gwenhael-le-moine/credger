@@ -20,6 +20,7 @@ app.component('dashboard',
             .compact()
             .flatten()
             .value();
+
           ctrl.retrieve_graph_values(ctrl.graphed_accounts);
         };
 
@@ -44,25 +45,23 @@ app.component('dashboard',
                   });
                 })
                 .each((cat) => {
-                  cat = _(cat).sortBy((month) => {
-                    return month.date;
-                  });
+                  cat = _(cat).sortBy((month) => { return month.date; });
                 });
 
               ctrl.graphique = {
                 options: {
                   chart: {
                     type: 'multiBarChart',
-                    height: 300,
+                    height: 450,
                     stacked: true,
                     showControls: true,
                     showLegend: true,
                     showLabels: true,
                     showValues: true,
-                    showYAxis: false,
+                    showYAxis: true,
 
                     x: (d) => { return d.x; },
-                    y: (d) => { return d.y; },
+                    y: (d) => { return d.y ? d.y : 0; },
                     valueFormat: (d) => { return `${d} €`; },
 
                     xAxis: {
@@ -75,13 +74,6 @@ app.component('dashboard',
                     rotateLabels: -67,
                     labelSunbeamLayout: true,
                     useInteractiveGuideline: true,
-                    multibar: {
-                      dispatch: {
-                        elementClick: function(event) {
-                          ctrl.period = event.data.x; // FIXME: doesn't trigger data-binding
-                        }
-                      }
-                    }
                   }
                 },
                 data: _.chain(response.data)
@@ -90,23 +82,26 @@ app.component('dashboard',
                   .map((key) => {
                     return {
                       key: key,
-                      values: _.chain(response.data[key]).map((value) => {
-                        let date = new Date(value.date);
-                        let period = date.getFullYear() + '-' + (date.getMonth() < 9 ? '0' : '') + (date.getMonth() + 1);
-                        ctrl.periods.push(period);
+                      values: _.chain(response.data[key])
+                        .map((value) => {
+                          let date = new Date(value.date);
+                          let period = date.getFullYear() + '-' + (date.getMonth() < 9 ? '0' : '') + (date.getMonth() + 1);
+                          ctrl.periods.push(period);
 
-                        return {
-                          key: key,
-                          x: period,
-                          y: parseInt(value.amount)
-                        };
-                      })
+                          return {
+                            key: key,
+                            x: period,
+                            y: parseInt(value.amount)
+                          };
+                        })
                         .sortBy((item) => { return item.x; })
                         .value()
                     };
                   })
                   .value()
               };
+
+              console.log(ctrl.graphique)
 
               ctrl.periods = _.chain(ctrl.periods).uniq().sort().reverse().value();
               ctrl.period = _(ctrl.periods).first();
@@ -139,24 +134,24 @@ app.component('dashboard',
 
     template: `
     <div class="dashboard">
-      <div class="global-graph" style="height: 300px;">
-        <div class="accounts" style="width: 20%; height: 100%; float: left;">
-          <ul>
-            <li ng:repeat="account in $ctrl.main_accounts_depths">
-              <label>{{account.name}} depth</label>
-              <rzslider rz-slider-options="{floor: 0, ceil: account.max_depth, onEnd: $ctrl.compute_selected_accounts}" rz-slider:model="account.depth"></rzslider>
-            </li>
-          </ul>
-        </div>
+<div class="global-graph" style="height: 450px;">
+<div class="accounts" style="width: 20%; height: 100%; float: left;">
+<ul>
+<li ng:repeat="account in $ctrl.main_accounts_depths">
+<label>{{account.name}} depth</label>
+<rzslider rz-slider-options="{floor: 0, ceil: account.max_depth, onEnd: $ctrl.compute_selected_accounts}" rz-slider:model="account.depth"></rzslider>
+</li>
+</ul>
+</div>
 
-        <div class="accounts" style="width: 20%; height: 100%; float: left;">
-          <select style="height: 100%;" multiple ng:model="$ctrl.graphed_accounts" ng:change="$ctrl.retrieve_graph_values($ctrl.graphed_accounts)">
-            <option ng:repeat="account in $ctrl.accounts">{{account}}</option>
-          </select>
-        </div>
+<div class="accounts" style="width: 20%; height: 100%; float: left;">
+<select style="height: 100%;" multiple ng:model="$ctrl.graphed_accounts" ng:change="$ctrl.retrieve_graph_values($ctrl.graphed_accounts)">
+<option ng:repeat="account in $ctrl.accounts">{{account}}</option>
+</select>
+</div>
 
-        <div class="graph" style="width: 60%; float: left;">
-          <nvd3 data="$ctrl.graphique.data"
+<div class="graph" style="width: 60%; float: left;">
+<nvd3 data="$ctrl.graphique.data"
                 options="$ctrl.graphique.options">
           </nvd3>{{$ctrl.period}}
         </div>
