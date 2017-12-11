@@ -47,7 +47,7 @@ app.component('bucket',
 
                       swal({
                         title: response.data.key,
-                        html: `
+  html: `
   <table style="width: 100%;">
     <thead>
       <tr>
@@ -87,7 +87,7 @@ app.component('bucket',
       }
     ],
 
-  template: `
+    template: `
   <div class="bucket">
     <div class="content">
       <div class="graph">
