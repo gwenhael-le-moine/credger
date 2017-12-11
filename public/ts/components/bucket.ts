@@ -71,8 +71,7 @@ app.component('bucket',
             API.balance(ctrl.period, ctrl.categories, ctrl.depth)
               .then((response) => {
                 ctrl.raw_data = _(response.data)
-                  .sortBy((account) => { return account.amount; })
-                  .reverse();
+                  .sortBy((account) => { return account.name; });
 
                 ctrl.graph_options.chart.height = 60 + (25 * ctrl.raw_data.length);
 
