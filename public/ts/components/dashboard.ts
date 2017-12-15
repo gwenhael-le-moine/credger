@@ -75,12 +75,12 @@ app.component('dashboard',
                       tooltip: {
                         contentGenerator: function(e) {
                           let format_line = (serie) => {
-                            return `
-<tr>
-<td style="background-color: ${serie.color}"> </td>
-<td>${serie.key}</td>
-<td style="text-align: right; font-weight: bold;">${serie.value}</td>
-</tr>
+  return `
+  <tr>
+    <td style="background-color: ${serie.color}"> </td>
+    <td>${serie.key}</td>
+    <td style="text-align: right; font-weight: bold;">${serie.value}</td>
+  </tr>
 `;
                           };
 
@@ -90,10 +90,19 @@ app.component('dashboard',
                             return series.filter((s) => { return s.value != 0; });
                           };
 
-                          return `
+return `
 <h2>${e.value}</h2>
 <table>
-${prepare_series(e.series).map((s) => { return format_line(s); }).join("")}
+  <tbody>
+    ${prepare_series(e.series).map((s) => { return format_line(s); }).join("")}
+  </tbody>
+  <tfoot>
+    <tr>
+      <td> </td>
+      <td style="text-align: right; text-decoration: underline; font-weight: bold;">Total</td>
+      <td style="text-align: right; font-weight: bold;">${e.series.reduce((memo, serie) => { return memo + serie.value; }, 0)}</td>
+    </tr>
+  </tfoot>
 </table>
 `;
                         }
