@@ -22,10 +22,11 @@ app.service('API',
         });
       };
 
-      API.graph_values = function(period, categories) {
+      API.graph_values = function(period, granularity, categories) {
         return $http.get('/api/ledger/graph_values', {
           params: {
             period: period,
+            granularity: granularity,
             categories: categories
           }
         });

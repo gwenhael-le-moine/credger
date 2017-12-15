@@ -46,6 +46,7 @@ get "/api/ledger/graph_values" do |env|
   env.response.content_type = "application/json"
 
   ledger.graph_values( env.params.query["period"],
+                       "--#{env.params.query["granularity"]}",
                        env.params.query["categories"].split(" ") ).to_json
 end
 

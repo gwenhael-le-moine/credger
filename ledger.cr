@@ -59,13 +59,14 @@ class Ledger
   end
 
   def graph_values( period : String = "",
+                    granularity : String = "",
                     categories : Array(String) = ["Expenses"] ) : Hash( String, Array( NamedTuple( date: String, amount: String, currency: String ) ) )
     period = period == "" ? "" : "-p '#{period}'"
 
     result = {} of String => Array(NamedTuple(date: String, amount: String, currency: String))
     categories.map do |category|
       result[category] = CSV
-                         .parse( run( "-MAn --exchange '#{CURRENCY}' #{period}", "csv --no-revalued", category ) )
+                         .parse( run( "-MAn --exchange '#{CURRENCY}' #{period} #{granularity}", "csv --no-revalued", category ) )
                          .map do |row|
         { date: row[ 0 ],
           amount: row[ 5 ],

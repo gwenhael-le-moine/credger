@@ -3,6 +3,9 @@ app.component('dashboard',
     controller: ['$filter', 'API',
       function($filter, API) {
         let ctrl = this;
+        ctrl.granularity = "monthly";
+
+        let is_monthly = () => { return ctrl.granularity == "monthly"; };
 
         ctrl.compute_selected_accounts = () => {
           ctrl.graphed_accounts = _.chain(ctrl.main_accounts_depths)
@@ -25,7 +28,7 @@ app.component('dashboard',
         };
 
         ctrl.retrieve_graph_values = (categories) => {
-          API.graph_values("", categories.join(" "))
+          API.graph_values("", ctrl.granularity, categories.join(" "))
             .then((response) => {
               ctrl.periods = [];
 
@@ -75,12 +78,12 @@ app.component('dashboard',
                       tooltip: {
                         contentGenerator: function(e) {
                           let format_line = (serie) => {
-  return `
-  <tr>
-    <td style="background-color: ${serie.color}"> </td>
-    <td>${serie.key}</td>
-    <td style="text-align: right; font-weight: bold;">${serie.value}</td>
-  </tr>
+                            return `
+<tr>
+<td style="background-color: ${serie.color}"> </td>
+<td>${serie.key}</td>
+<td style="text-align: right; font-weight: bold;">${serie.value}</td>
+</tr>
 `;
                           };
 
@@ -90,19 +93,19 @@ app.component('dashboard',
                             return series.filter((s) => { return s.value != 0; });
                           };
 
-return `
+                          return `
 <h2>${e.value}</h2>
 <table>
-  <tbody>
-    ${prepare_series(e.series).map((s) => { return format_line(s); }).join("")}
-  </tbody>
-  <tfoot>
-    <tr>
-      <td> </td>
-      <td style="text-align: right; text-decoration: underline; font-weight: bold;">Total</td>
-      <td style="text-align: right; font-weight: bold;">${e.series.reduce((memo, serie) => { return memo + serie.value; }, 0)}</td>
-    </tr>
-  </tfoot>
+<tbody>
+${prepare_series(e.series).map((s) => { return format_line(s); }).join("")}
+</tbody>
+<tfoot>
+<tr>
+<td> </td>
+<td style="text-align: right; text-decoration: underline; font-weight: bold;">Total</td>
+<td style="text-align: right; font-weight: bold;">${e.series.reduce((memo, serie) => { return memo + serie.value; }, 0)}</td>
+</tr>
+</tfoot>
 </table>
 `;
                         }
@@ -119,7 +122,7 @@ return `
                       values: _.chain(response.data[key])
                         .map((value) => {
                           let date = new Date(value.date);
-                          let period = date.getFullYear() + '-' + (date.getMonth() < 9 ? '0' : '') + (date.getMonth() + 1);
+                          let period = is_monthly() ? date.getFullYear() + '-' + (date.getMonth() < 9 ? '0' : '') + (date.getMonth() + 1) : date.getFullYear();
                           ctrl.periods.push(period);
 
                           return {
@@ -164,10 +167,12 @@ return `
       }
     ],
 
-    template: `
+  template: `
   <div class="dashboard">
     <div class="global-graph" style="height: 450px;">
       <div class="accounts" style="width: 20%; height: 100%; float: left;">
+        <label><input type="radio" ng:model="$ctrl.granularity" value="monthly" name="monthly" ng:change="$ctrl.compute_selected_accounts()" />monthly</label>
+        <label><input type="radio" ng:model="$ctrl.granularity" value="yearly" name="yearly" ng:change="$ctrl.compute_selected_accounts()" />yearly</label>
         <ul>
           <li ng:repeat="account in $ctrl.main_accounts_depths">
             <label>{{account.name}} depth</label>
@@ -184,7 +189,7 @@ return `
     </div>
 
     <h1 style="text-align: center;">
-      <select ng:options="p as p | amDateFormat:'MMMM YYYY' for p  in $ctrl.periods" ng:model="$ctrl.period"></select>
+      <select ng:options="p as p for p in $ctrl.periods" ng:model="$ctrl.period"></select>
     </h1>
 
     <bucket categories="'Expenses Income Equity Liabilities'" period="$ctrl.period"></bucket>
