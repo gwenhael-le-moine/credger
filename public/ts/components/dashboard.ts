@@ -4,6 +4,7 @@ app.component('dashboard',
       function($filter, API) {
         let ctrl = this;
         ctrl.granularity = "monthly";
+        ctrl.account_selection = "depth";
 
         let is_monthly = () => { return ctrl.granularity == "monthly"; };
 
@@ -167,18 +168,34 @@ ${prepare_series(e.series).map((s) => { return format_line(s); }).join("")}
       }
     ],
 
-  template: `
+    template: `
   <div class="dashboard">
     <div class="global-graph" style="height: 450px;">
       <div class="accounts" style="width: 20%; height: 100%; float: left;">
-        <label><input type="radio" ng:model="$ctrl.granularity" value="monthly" name="monthly" ng:change="$ctrl.compute_selected_accounts()" />monthly</label>
-        <label><input type="radio" ng:model="$ctrl.granularity" value="yearly" name="yearly" ng:change="$ctrl.compute_selected_accounts()" />yearly</label>
-        <ul>
-          <li ng:repeat="account in $ctrl.main_accounts_depths">
-            <label>{{account.name}} depth</label>
-            <rzslider rz-slider-options="{floor: 0, ceil: account.max_depth, onEnd: $ctrl.compute_selected_accounts}" rz-slider:model="account.depth"></rzslider>
-          </li>
-        </ul>
+        <div style="width: 100%; float: left;">
+          <label><input type="radio" ng:model="$ctrl.account_selection" value="depth" name="depth"/>depth</label>
+          <label><input type="radio" ng:model="$ctrl.account_selection" value="list" name="list"/>list</label>
+        </div>
+        <div style="width: 100%; height: 90%; float: left;">
+          <ul ng:if="$ctrl.account_selection == 'depth'">
+            <li ng:repeat="account in $ctrl.main_accounts_depths">
+              <label>{{account.name}} depth</label>
+              <rzslider rz-slider-options="{floor: 0, ceil: account.max_depth, onEnd: $ctrl.compute_selected_accounts}" rz-slider:model="account.depth"></rzslider>
+            </li>
+          </ul>
+
+          <select style="height: 100%; width: 100%;" multiple
+                  ng:model="$ctrl.graphed_accounts"
+                  ng:change="$ctrl.retrieve_graph_values($ctrl.graphed_accounts)"
+                  ng:if="$ctrl.account_selection == 'list'">
+            <option ng:repeat="account in $ctrl.accounts">{{account}}</option>
+          </select>
+        </div>
+
+        <div style="width: 100%; float: left;">
+          <label><input type="radio" ng:model="$ctrl.granularity" value="monthly" name="monthly" ng:change="$ctrl.compute_selected_accounts()" />monthly</label>
+          <label><input type="radio" ng:model="$ctrl.granularity" value="yearly" name="yearly" ng:change="$ctrl.compute_selected_accounts()" />yearly</label>
+        </div>
       </div>
 
       <div class="graph" style="width: 80%; float: left;">
