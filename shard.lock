@@ -2,7 +2,7 @@ version: 1.0
 shards:
   kemal:
     github: kemalcr/kemal
-    commit: 8cb9770ec3c6cf5897e644229dad8d0b5c360941
+    commit: 50f82f51874babe92cbb808013647a7989d54354
 
   kilt:
     github: jeromegn/kilt

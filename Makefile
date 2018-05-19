@@ -14,7 +14,7 @@ pull-deps:
 	cd public/vendor; npm install
 
 clean:
-	-rm public/js/app.min.js public/js/app.js
+	-rm public/js/app.min.js public/js/app.js credger
 
 clean-all:
 	-rm -fr lib/ public/vendor/node_modules

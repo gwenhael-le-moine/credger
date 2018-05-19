@@ -94,19 +94,21 @@ app.component('dashboard',
                             return series.filter((s) => { return s.value != 0; });
                           };
 
-                          return `
+                            let total = e.series.reduce((memo, serie) => { return memo + serie.value; }, 0);
+
+return `
 <h2>${e.value}</h2>
 <table>
-<tbody>
-${prepare_series(e.series).map((s) => { return format_line(s); }).join("")}
-</tbody>
-<tfoot>
-<tr>
-<td> </td>
-<td style="text-align: right; text-decoration: underline; font-weight: bold;">Total</td>
-<td style="text-align: right; font-weight: bold;">${e.series.reduce((memo, serie) => { return memo + serie.value; }, 0)}</td>
-</tr>
-</tfoot>
+  <tbody>
+    ${prepare_series(e.series).map((s) => { return format_line(s); }).join("")}
+  </tbody>
+  <tfoot>
+    <tr style="color: #ececec; background-color: ${total < 0 ? 'green' : 'red'}">
+      <td> </td>
+      <td style="text-align: right; text-decoration: underline; font-weight: bold;">Total</td>
+      <td style="text-align: right; font-weight: bold;">${total}</td>
+    </tr>
+  </tfoot>
 </table>
 `;
                         }
