@@ -1,11 +1,10 @@
 # encoding: utf-8
-
 require "csv"
 
 # Crystal wrapper module for calling ledger
 class Ledger
   def initialize( binary : String = "ledger",
-                  ledger_file : String = ENV[ "LEDGER_FILE" ] ||= "/home/cycojesus/org/comptes.ledger" )
+                  ledger_file : String = ENV[ "LEDGER_FILE" ] ||= "${ENV[ \"HOME\" ]}/org/comptes.ledger" )
     @binary = binary
     @file = ledger_file
   end
@@ -47,14 +46,14 @@ class Ledger
     depth = depth.nil? ? "" : "--depth #{depth}"
     operation = cleared ? "cleared" : "balance"
 
-    run( "--flat --no-total --exchange '#{CURRENCY}' #{period} #{depth}", operation, categories )
+    run( "--flat --no-total --exchange '#{ENV["CREDGER_CURRENCY"]}' #{period} #{depth}", operation, categories )
       .split( "\n" )
       .reject {|line| line.empty?}
       .map do |line|
-      line_array = line.split( "#{CURRENCY}" )
+      line_array = line.split( ENV["CREDGER_CURRENCY"] )
 
       { account: line_array[ 1 ].strip,
-        amount: line_array[ 0 ].tr( SEPARATOR, "." ).to_f }
+        amount: line_array[ 0 ].tr( ENV["CREDGER_SEPARATOR"], "." ).to_f }
     end
   end
 
@@ -66,7 +65,7 @@ class Ledger
     result = {} of String => Array(NamedTuple(date: String, amount: String, currency: String))
     categories.map do |category|
       result[category] = CSV
-                         .parse( run( "-MAn --exchange '#{CURRENCY}' #{period} #{granularity}", "csv --no-revalued", category ) )
+                         .parse( run( "-MAn --exchange '#{ENV["CREDGER_CURRENCY"]}' #{period} #{granularity}", "csv --no-revalued", category ) )
                          .map do |row|
         { date: row[ 0 ],
           amount: row[ 5 ],
@@ -82,7 +81,7 @@ class Ledger
     period = period == "" ? "" : "-p '#{period}'"
 
     CSV
-      .parse( run( "--exchange '#{CURRENCY}' #{period}", "csv --no-revalued", categories.join(" ") ) )
+      .parse( run( "--exchange '#{ENV["CREDGER_CURRENCY"]}' #{period}", "csv --no-revalued", categories.join(" ") ) )
       .map do |row|
       { date: row[ 0 ],
         payee: row[ 2 ],

@@ -2,8 +2,8 @@ require "kemal"
 
 require "./ledger"
 
-CURRENCY = "€"
-SEPARATOR = ","
+ENV["CREDGER_CURRENCY"] ||= "€"
+ENV["CREDGER_SEPARATOR"] ||= ","
 
 ENV["PORT"] ||= "3000"
 
