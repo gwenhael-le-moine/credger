@@ -1,6 +1,6 @@
 all: credger public/js/app.min.js
 
-credger: credger.cr ledger.cr
+credger: credger.cr ledger.cr shard.lock
 	crystal build $<
 
 public/js/app.js: public/ts/app.ts public/ts/services/API.ts public/ts/components/dashboard.ts public/ts/components/bucket.ts
