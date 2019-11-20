@@ -1,0 +1,55 @@
+<html>
+    <head>
+        <script>
+         const API = {
+             balance: async (period, categories, depth) => {
+                 let url = new URL( "/api/ledger/balance", `${location.protocol}//${location.host}` );
+                 url.search = new URLSearchParams( { period: period,
+                                                     categories: categories,
+                                                     depth: depth } );
+                 const response = await fetch( url );
+                 const myJson = await response.json(); //extract JSON from the http response
+                 // do something with myJson
+                 console.log(myJson);
+             },
+
+             register: async (period, categories) => {
+                 let url = new URL( "/api/ledger/register", `${location.protocol}//${location.host}` );
+                 url.search = new URLSearchParams( { period: period,
+                                                     categories: categories } );
+                 const response = await fetch( url );
+                 const myJson = await response.json(); //extract JSON from the http response
+                 // do something with myJson
+                 console.log(myJson);
+             },
+
+             graph_values: async (period, categories, granularity) => {
+                 let url = new URL( "/api/ledger/graph_values", `${location.protocol}//${location.host}` );
+                 url.search = new URLSearchParams( { period: period,
+                                                     categories: categories,
+                                                     granularity: granularity } );
+                 const response = await fetch( url );
+                 const myJson = await response.json(); //extract JSON from the http response
+                 // do something with myJson
+                 console.log(myJson);
+             },
+
+             accounts: async () => {
+                 let url = new URL( "/api/ledger/accounts", `${location.protocol}//${location.host}` );
+                 const response = await fetch( url );
+                 const myJson = await response.json(); //extract JSON from the http response
+                 // do something with myJson
+                 console.log(myJson);
+             },
+
+         }
+        </script>
+    </head>
+    <body>
+        <script>
+         API.balance( "2019", ["Expenses", "Assets"].join(" "), 2 );
+
+         API.accounts();
+        </script>
+    </body>
+</html>

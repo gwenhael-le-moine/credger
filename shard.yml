@@ -4,4 +4,3 @@ version: 1.99
 dependencies:
   kemal:
     github: kemalcr/kemal
-    branch: master
