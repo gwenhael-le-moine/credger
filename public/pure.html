@@ -43,48 +43,84 @@
          };
 
          const UI = {
+             /* https://medium.com/@heyoka/scratch-made-svg-donut-pie-charts-in-html5-2c587e935d72 */
              donut: ( element, dataset ) => {
+                 const thickness = 9;
                  let filed_percent = 0;
                  const data_to_donut_segment = ( data ) => {
-                     const stroke_dashoffset = ( percent ) => {
-                         let offset = ( 100 - filed_percent ) + 25;
+                     if ( data.amount > 0 ) {
+                         const stroke_dashoffset = ( percent ) => {
+                             let offset = 100 - filed_percent;
 
-                         return offset > 100 ? offset - 100 : offset;
-                     };
+                             return offset > 100 ? offset - 100 : offset;
+                         };
 
-                     const donut_segment = `<circle class="donut-segment" cx="21" cy="21" r="15.91549430918954" fill="transparent" stroke="${data.color}" stroke-width="3" stroke-dasharray="${data.percent} ${100 - data.percent}" stroke-dashoffset="${stroke_dashoffset( data.percent )}"></circle>`;
-                     filed_percent += data.percent;
+                         const donut_segment = `<circle class="donut-segment ${data.account.split(':').join(' ')}" cx="21" cy="21" r="15.91549430918954" fill="transparent" stroke="${data.color}" stroke-width="${thickness}" stroke-dasharray="${data.percent} ${100 - data.percent}" stroke-dashoffset="${stroke_dashoffset( data.percent )}"><title>${data.tooltip}</title></circle>`;
+                         filed_percent += data.percent;
 
-                     return donut_segment;
+                         return donut_segment;
+                     } else
+                         return '';
                  };
 
                  element.innerHTML = `<svg width="100%" height="100%" viewBox="0 0 42 42" class="donut">
                      <circle class="donut-hole" cx="21" cy="21" r="15.91549430918954" fill="#fff"></circle>
-                     <circle class="donut-ring" cx="21" cy="21" r="15.91549430918954" fill="transparent" stroke="#d2d3d4" stroke-width="3"></circle>
+                     <circle class="donut-ring" cx="21" cy="21" r="15.91549430918954" fill="transparent" stroke="#d2d3d4" stroke-width="${thickness}"></circle>
 
                      ${dataset.map( line => data_to_donut_segment( line ) ).join("")}
                  </svg><pre>${JSON.stringify( dataset )}</pre>`;
              }
          };
+
+         let current_period;
+         const Period = {
+             set: ( period ) => {
+                 current_period = period;
+                 document.querySelector( "#period #display" ).innerHTML = current_period.toISOString();
+
+                 monthly( current_period.toISOString().split("T")[0].slice( 0, -3 ), "#month" );
+             },
+             get: () => current_period,
+             prev: () => {
+                 current_period.setMonth( current_period.getMonth() - 1 );
+                 Period.set( current_period );
+             },
+             next: () => {
+                 current_period.setMonth( current_period.getMonth() + 1 );
+                 Period.set( current_period );
+             },
+         };
+
+         const monthly = ( month, element_selector ) => {
+             API.balance( month, ["Expenses"].join(" "), 3 )
+                .then( balance => {
+                    const total = balance.reduce( (memo, line) => memo + line.amount, 0 );
+
+                    UI.donut( document.querySelector( `${element_selector} #donut` ),
+                              balance.sort( (a, b) => b.amount - a.amount )
+                                     .map( line => {
+                                         line.color = Utils.text_to_color( line.account );
+                                         line.percent = ( line.amount / total ) * 100;
+                                         line.tooltip = `${line.account} : ${line.amount} €`;
+
+                                         return line;
+                                     } ) );
+                } );
+         };
         </script>
     </head>
     <body>
-        <div id="donut"></div>
+        <div id="period">
+            <button onclick="Period.prev()">-</button>
+            <button onclick="Period.next()">+</button>
+            <h3 id="display"></h3>
+        </div>
+        <div id="month">
+            <div id="donut" style="height: 256; width: 256;"></div>
+        </div>
 
         <script>
-         const period = (new Date()).toISOString().split("T")[0].slice( 0, -3 );
-         API.balance( period, ["Expenses"].join(" "), 2 )
-            .then( balance => {
-                const total = balance.reduce( (memo, line) => memo + line.amount, 0 );
-
-                UI.donut( document.getElementById( "donut" ),
-                          balance.map( line => {
-                              line.color = Utils.text_to_color( line.account );
-                              line.percent = ( line.amount / total ) * 100;
-
-                              return line;
-                          } ) );
-            } );
+         Period.set( new Date() );
         </script>
     </body>
 </html>
