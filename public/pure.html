@@ -1,55 +1,89 @@
 <html>
     <head>
         <script>
+         const fetch_from_API = async ( endpoint, params = {} ) => {
+             let url = new URL( endpoint, `${location.protocol}//${location.host}` );
+             url.search = new URLSearchParams( params );
+
+             const response = await fetch( url );
+
+             return await response.json();
+         };
+
          const API = {
-             balance: async (period, categories, depth) => {
-                 let url = new URL( "/api/ledger/balance", `${location.protocol}//${location.host}` );
-                 url.search = new URLSearchParams( { period: period,
-                                                     categories: categories,
-                                                     depth: depth } );
-                 const response = await fetch( url );
-                 const myJson = await response.json(); //extract JSON from the http response
-                 // do something with myJson
-                 console.log(myJson);
-             },
+             balance: (period, categories, depth) => fetch_from_API( "/api/ledger/balance",
+                                                                     { period: period,
+                                                                       categories: categories,
+                                                                       depth: depth } ),
 
-             register: async (period, categories) => {
-                 let url = new URL( "/api/ledger/register", `${location.protocol}//${location.host}` );
-                 url.search = new URLSearchParams( { period: period,
-                                                     categories: categories } );
-                 const response = await fetch( url );
-                 const myJson = await response.json(); //extract JSON from the http response
-                 // do something with myJson
-                 console.log(myJson);
-             },
+             register: (period, categories) => fetch_from_API( "/api/ledger/register",
+                                                               { period: period,
+                                                                 categories: categories } ),
 
-             graph_values: async (period, categories, granularity) => {
-                 let url = new URL( "/api/ledger/graph_values", `${location.protocol}//${location.host}` );
-                 url.search = new URLSearchParams( { period: period,
-                                                     categories: categories,
-                                                     granularity: granularity } );
-                 const response = await fetch( url );
-                 const myJson = await response.json(); //extract JSON from the http response
-                 // do something with myJson
-                 console.log(myJson);
-             },
+             graph_values: (period, categories, granularity) => fetch_from_API( "/api/ledger/graph_values",
+                                                                                { period: period,
+                                                                                  categories: categories,
+                                                                                  granularity: granularity } ),
 
-             accounts: async () => {
-                 let url = new URL( "/api/ledger/accounts", `${location.protocol}//${location.host}` );
-                 const response = await fetch( url );
-                 const myJson = await response.json(); //extract JSON from the http response
-                 // do something with myJson
-                 console.log(myJson);
-             },
-
+             accounts: () => fetch_from_API( "/api/ledger/accounts" )
          }
+
+         const Utils = {
+             text_to_color: ( text ) => {
+                 let hash = 0
+                 for (let i = 0; i < text.length; i++)
+                     hash = (((hash << 5) - hash) + text.charCodeAt(i)) | 0;
+                 hash = Math.abs( hash );
+
+                 let shash = hash.toString(16).substr(0, 6).padEnd( 6, '0' );
+
+                 return `#${shash}`;
+             }
+         };
+
+         const UI = {
+             donut: ( element, dataset ) => {
+                 let filed_percent = 0;
+                 const data_to_donut_segment = ( data ) => {
+                     const stroke_dashoffset = ( percent ) => {
+                         let offset = ( 100 - filed_percent ) + 25;
+
+                         return offset > 100 ? offset - 100 : offset;
+                     };
+
+                     const donut_segment = `<circle class="donut-segment" cx="21" cy="21" r="15.91549430918954" fill="transparent" stroke="${data.color}" stroke-width="3" stroke-dasharray="${data.percent} ${100 - data.percent}" stroke-dashoffset="${stroke_dashoffset( data.percent )}"></circle>`;
+                     filed_percent += data.percent;
+
+                     return donut_segment;
+                 };
+
+                 element.innerHTML = `<svg width="100%" height="100%" viewBox="0 0 42 42" class="donut">
+                     <circle class="donut-hole" cx="21" cy="21" r="15.91549430918954" fill="#fff"></circle>
+                     <circle class="donut-ring" cx="21" cy="21" r="15.91549430918954" fill="transparent" stroke="#d2d3d4" stroke-width="3"></circle>
+
+                     ${dataset.map( line => data_to_donut_segment( line ) ).join("")}
+                 </svg><pre>${JSON.stringify( dataset )}</pre>`;
+             }
+         };
         </script>
     </head>
     <body>
-        <script>
-         API.balance( "2019", ["Expenses", "Assets"].join(" "), 2 );
+        <div id="donut"></div>
 
-         API.accounts();
+        <script>
+         const period = (new Date()).toISOString().split("T")[0].slice( 0, -3 );
+         API.balance( period, ["Expenses"].join(" "), 2 )
+            .then( balance => {
+                const total = balance.reduce( (memo, line) => memo + line.amount, 0 );
+
+                UI.donut( document.getElementById( "donut" ),
+                          balance.map( line => {
+                              line.color = Utils.text_to_color( line.account );
+                              line.percent = ( line.amount / total ) * 100;
+
+                              return line;
+                          } ) );
+            } );
         </script>
     </body>
 </html>
