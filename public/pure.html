@@ -94,19 +94,19 @@
                      Controls.period.set( current_period );
                  },
              },
-             granularity: {
-                 set: ( value ) => {
-                     if ( !isNaN( parseInt( value ) ) ) {
-                         granularity = parseInt( value );
+             /* granularity: {
+              *     set: ( value ) => {
+              *         if ( !isNaN( parseInt( value ) ) ) {
+              *             granularity = parseInt( value );
 
-                         monthly();
-                     }
-                 }
-             }
+              *             monthly();
+              *         }
+              *     }
+              * } */
          };
 
          const monthly = () => {
-             API.balance( current_period.toISOString().split("T")[0].slice( 0, -3 ), ["Expenses"].join(" "), granularity )
+             API.balance( current_period.toISOString().split("T")[0].slice( 0, -3 ), ["Expenses"].join(" "), 999 )
                 .then( balance => {
                     const total = balance.reduce( (memo, line) => memo + line.amount, 0 );
 
@@ -130,9 +130,9 @@
                 <button onclick="Controls.period.next()">+</button>
                 <h3 id="display"></h3>
             </div>
-            <div id="granularity">
-                <input oninput="Controls.granularity.set( this.value );">
-            </div>
+            <!-- <div id="granularity">
+                 <input oninput="Controls.granularity.set( this.value );">
+                 </div> -->
         </div>
         <div id="month">
             <div id="donut" style="height: 256; width: 256;"></div>
