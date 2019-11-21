@@ -12,20 +12,9 @@
          };
 
          const API = {
-             balance: (period, categories, depth) => fetch_from_API( "/api/ledger/balance",
-                                                                     { period: period,
-                                                                       categories: categories,
-                                                                       depth: depth } ),
-
-             register: (period, categories) => fetch_from_API( "/api/ledger/register",
-                                                               { period: period,
-                                                                 categories: categories } ),
-
-             graph_values: (period, categories, granularity) => fetch_from_API( "/api/ledger/graph_values",
-                                                                                { period: period,
-                                                                                  categories: categories,
-                                                                                  granularity: granularity } ),
-
+             balance: (period, categories, depth) => fetch_from_API( "/api/ledger/balance", { period: period, categories: categories, depth: depth } ),
+             register: (period, categories) => fetch_from_API( "/api/ledger/register", { period: period, categories: categories } ),
+             graph_values: (period, categories, granularity) => fetch_from_API( "/api/ledger/graph_values", { period: period, categories: categories, granularity: granularity } ),
              accounts: () => fetch_from_API( "/api/ledger/accounts" )
          }
 
@@ -68,35 +57,60 @@
                      <circle class="donut-ring" cx="21" cy="21" r="15.91549430918954" fill="transparent" stroke="#d2d3d4" stroke-width="${thickness}"></circle>
 
                      ${dataset.map( line => data_to_donut_segment( line ) ).join("")}
-                 </svg><pre>${JSON.stringify( dataset )}</pre>`;
+                 </svg>`;
              }
          };
 
          let current_period;
-         const Period = {
-             set: ( period ) => {
-                 current_period = period;
-                 document.querySelector( "#period #display" ).innerHTML = current_period.toISOString();
+         let granularity = 3;
 
-                 monthly( current_period.toISOString().split("T")[0].slice( 0, -3 ), "#month" );
+         const Controls = {
+             period: {
+                 set: ( period ) => {
+                     current_period = period;
+                     const months = { 0:  'Janvier',
+                                      1:  'Février',
+                                      2:  'Mars',
+                                      3:  'Avril',
+                                      4:  'Mai',
+                                      5:  'Juin',
+                                      6:  'Juillet',
+                                      7:  'Août',
+                                      8:  'Septembre',
+                                      9:  'Octobre',
+                                      10: 'Novembre',
+                                      11: 'Décembre' };
+                     document.querySelector( "#period #display" ).innerHTML = `${months[ current_period.getMonth() ]} ${current_period.getFullYear()}`;
+
+                     monthly();
+                 },
+                 get: () => current_period,
+                 prev: () => {
+                     current_period.setMonth( current_period.getMonth() - 1 );
+                     Controls.period.set( current_period );
+                 },
+                 next: () => {
+                     current_period.setMonth( current_period.getMonth() + 1 );
+                     Controls.period.set( current_period );
+                 },
              },
-             get: () => current_period,
-             prev: () => {
-                 current_period.setMonth( current_period.getMonth() - 1 );
-                 Period.set( current_period );
-             },
-             next: () => {
-                 current_period.setMonth( current_period.getMonth() + 1 );
-                 Period.set( current_period );
-             },
+             granularity: {
+                 set: ( value ) => {
+                     if ( !isNaN( parseInt( value ) ) ) {
+                         granularity = parseInt( value );
+
+                         monthly();
+                     }
+                 }
+             }
          };
 
-         const monthly = ( month, element_selector ) => {
-             API.balance( month, ["Expenses"].join(" "), 3 )
+         const monthly = () => {
+             API.balance( current_period.toISOString().split("T")[0].slice( 0, -3 ), ["Expenses"].join(" "), granularity )
                 .then( balance => {
                     const total = balance.reduce( (memo, line) => memo + line.amount, 0 );
 
-                    UI.donut( document.querySelector( `${element_selector} #donut` ),
+                    UI.donut( document.querySelector( `#month #donut` ),
                               balance.sort( (a, b) => b.amount - a.amount )
                                      .map( line => {
                                          line.color = Utils.text_to_color( line.account );
@@ -110,17 +124,22 @@
         </script>
     </head>
     <body>
-        <div id="period">
-            <button onclick="Period.prev()">-</button>
-            <button onclick="Period.next()">+</button>
-            <h3 id="display"></h3>
+        <div id="controls">
+            <div id="period">
+                <button onclick="Controls.period.prev()">-</button>
+                <button onclick="Controls.period.next()">+</button>
+                <h3 id="display"></h3>
+            </div>
+            <div id="granularity">
+                <input oninput="Controls.granularity.set( this.value );">
+            </div>
         </div>
         <div id="month">
             <div id="donut" style="height: 256; width: 256;"></div>
         </div>
 
         <script>
-         Period.set( new Date() );
+         Controls.period.set( new Date() );
         </script>
     </body>
 </html>
