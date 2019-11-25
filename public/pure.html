@@ -2,24 +2,25 @@
     <head>
         <meta charset="UTF-8">
         <script>
-         const fetch_from_API = async ( endpoint, params = {} ) => {
-             let url = new URL( endpoint, `${location.protocol}//${location.host}` );
-             url.search = new URLSearchParams( params );
-
-             const response = await fetch( url );
-
-             return await response.json();
-         };
 
          const API = {
-             balance: (period, categories, depth) => fetch_from_API( "/api/ledger/balance", { period: period, categories: categories, depth: depth } ),
-             register: (period, categories) => fetch_from_API( "/api/ledger/register", { period: period, categories: categories } ),
-             graph_values: (period, categories, granularity) => fetch_from_API( "/api/ledger/graph_values", { period: period, categories: categories, granularity: granularity } ),
-             accounts: () => fetch_from_API( "/api/ledger/accounts" )
+             fetch: async ( endpoint, params = {} ) => {
+                 let url = new URL( endpoint, `${location.protocol}//${location.host}` );
+                 url.search = new URLSearchParams( params );
+
+                 const response = await fetch( url );
+
+                 return await response.json();
+             },
+
+             balance: ( period, categories, depth ) => API.fetch( "/api/ledger/balance", { period: period, categories: categories, depth: depth } ),
+             register: ( period, categories ) => API.fetch( "/api/ledger/register", { period: period, categories: categories } ),
+             graph_values: ( period, categories, granularity ) => API.fetch( "/api/ledger/graph_values", { period: period, categories: categories, granularity: granularity } ),
+             accounts: () => API.fetch( "/api/ledger/accounts" )
          }
 
          const Utils = {
-             text_to_color: ( text ) => {
+             text_to_color: text => {
                  let hash = 0
                  for (let i = 0; i < text.length; i++)
                      hash = (((hash << 5) - hash) + text.charCodeAt(i)) | 0;
@@ -28,6 +29,11 @@
                  let shash = hash.toString(16).substr(0, 6).padEnd( 6, '0' );
 
                  return `#${shash}`;
+             },
+             readable_date: date => {
+                 const months = { 0: 'Janvier', 1: 'Février', 2: 'Mars', 3: 'Avril', 4: 'Mai', 5: 'Juin', 6: 'Juillet', 7: 'Août', 8: 'Septembre', 9: 'Octobre', 10: 'Novembre', 11: 'Décembre' };
+
+                 return `${months[ date.getMonth() ]} ${date.getFullYear()}`;
              }
          };
 
@@ -48,8 +54,9 @@
                          filed_percent += data.percent;
 
                          return donut_segment;
-                     } else
+                     } else {
                          return '';
+                     }
                  };
 
                  element.innerHTML = `<svg width="100%" height="100%" viewBox="0 0 42 42" class="donut">
@@ -69,8 +76,8 @@
                  init: () => Controls.period.set( new Date() ),
                  set: period => {
                      current_period = period;
-                     const months = { 0: 'Janvier', 1: 'Février', 2: 'Mars', 3: 'Avril', 4: 'Mai', 5: 'Juin', 6: 'Juillet', 7: 'Août', 8: 'Septembre', 9: 'Octobre', 10: 'Novembre', 11: 'Décembre' };
-                     document.querySelector( "#period #display" ).innerHTML = `${months[ current_period.getMonth() ]} ${current_period.getFullYear()}`;
+
+                     document.querySelector( "#period #display" ).innerHTML = Utils.readable_date( current_period );
 
                      monthly( current_period, selected_accounts );
                  },
@@ -103,21 +110,21 @@
              }
          };
 
-         const monthly = ( period, categories ) => {
-             API.balance( period.toISOString().split("T")[0].slice( 0, -3 ), categories.join(" "), 999 )
-                .then( balance => {
-                    const total = balance.reduce( (memo, line) => memo + line.amount, 0 );
+         const monthly = async ( period, categories ) => {
+             let balance = await API.balance( period.toISOString().split("T")[0].slice( 0, -3 ), categories.join(" "), 999 )
+             const total = balance.reduce( (memo, line) => memo + line.amount, 0 );
 
-                    UI.donut( document.querySelector( `#month #donut` ),
-                              balance.sort( (a, b) => b.amount - a.amount )
-                                     .map( line => {
-                                         line.color = Utils.text_to_color( line.account );
-                                         line.percent = ( line.amount / total ) * 100;
-                                         line.tooltip = `${line.account} : ${line.amount} €`;
+             UI.donut( document.querySelector( `#month #donut` ),
+                       balance.sort( (a, b) => b.amount - a.amount )
+                              .map( line => {
+                                  line.color = Utils.text_to_color( line.account );
+                                  line.percent = ( line.amount / total ) * 100;
+                                  line.tooltip = `${line.account} : ${line.amount} €`;
 
-                                         return line;
-                                     } ) );
-                } );
+                                  return line;
+                              } ) );
+
+             console.log( await API.graph_values( "", selected_accounts.join(" "), "monthly" ) )
          };
         </script>
     </head>
@@ -140,8 +147,6 @@
          (async () => {
              await Controls.accounts.init();
              await Controls.period.init();
-
-             console.log( await API.graph_values( "", ["Expenses", "Income"].join(" "), "monthly" ) )
          })();
         </script>
     </body>
