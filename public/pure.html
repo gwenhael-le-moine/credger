@@ -61,29 +61,18 @@
              }
          };
 
+         let selected_accounts = [];
          let current_period;
-         let granularity = 3;
 
          const Controls = {
              period: {
                  init: () => Controls.period.set( new Date() ),
-                 set: ( period ) => {
+                 set: period => {
                      current_period = period;
-                     const months = { 0:  'Janvier',
-                                      1:  'Février',
-                                      2:  'Mars',
-                                      3:  'Avril',
-                                      4:  'Mai',
-                                      5:  'Juin',
-                                      6:  'Juillet',
-                                      7:  'Août',
-                                      8:  'Septembre',
-                                      9:  'Octobre',
-                                      10: 'Novembre',
-                                      11: 'Décembre' };
+                     const months = { 0: 'Janvier', 1: 'Février', 2: 'Mars', 3: 'Avril', 4: 'Mai', 5: 'Juin', 6: 'Juillet', 7: 'Août', 8: 'Septembre', 9: 'Octobre', 10: 'Novembre', 11: 'Décembre' };
                      document.querySelector( "#period #display" ).innerHTML = `${months[ current_period.getMonth() ]} ${current_period.getFullYear()}`;
 
-                     monthly();
+                     monthly( current_period, selected_accounts );
                  },
                  get: () => current_period,
                  prev: () => {
@@ -97,33 +86,25 @@
              },
              accounts: {
                  init: async () => {
-                     let account_to_option = account => `<option value="${account.join(':')}">${account.join(':')}</option>`;
+                     let account_to_option = ( account, selected ) => `<option value="${account.join(':')}" ${selected ? "selected" : ""}>${account.join(':')}</option>`;
                      let accounts = await API.accounts();
                      let select = document.querySelector("select#accounts");
                      select.innerHTML = '';
 
                      for ( let i = 1 ; i < accounts.reduce( (memo, a) => a.length > memo ? a.length : memo, 0 ) ; i++  ) {
-                         select.innerHTML += `<optgroup label="Depth: ${i}">${accounts.filter( a => a.length == i ).map( account => account_to_option( account )).join('')}</optgroup>`;
+                         select.innerHTML += `<optgroup label="Depth: ${i}">${accounts.filter( a => a.length == i ).map( account => account_to_option( account, i == 1 )).join('')}</optgroup>`;
                      }
                  },
-                 onchange: ( accounts_selected ) => {
-                     /* TODO */
-                     console.log( accounts_selected );
+                 onchange: accounts_selected => {
+                     selected_accounts = accounts_selected;
+
+                     monthly( current_period, selected_accounts );
                  }
              }
-             /* granularity: {
-              *     set: ( value ) => {
-              *         if ( !isNaN( parseInt( value ) ) ) {
-              *             granularity = parseInt( value );
-
-              *             monthly();
-              *         }
-              *     }
-              * } */
          };
 
-         const monthly = () => {
-             API.balance( current_period.toISOString().split("T")[0].slice( 0, -3 ), ["Expenses"].join(" "), 999 )
+         const monthly = ( period, categories ) => {
+             API.balance( period.toISOString().split("T")[0].slice( 0, -3 ), categories.join(" "), 999 )
                 .then( balance => {
                     const total = balance.reduce( (memo, line) => memo + line.amount, 0 );
 
@@ -147,9 +128,6 @@
                 <button onclick="Controls.period.next()">+</button>
                 <h3 id="display"></h3>
             </div>
-            <!-- <div id="granularity">
-                 <input oninput="Controls.granularity.set( this.value );">
-                 </div> -->
         </div>
 
         <select id="accounts" name="accounts" multiple size="20" onchange="Controls.accounts.onchange( Array.from( this.options ).filter( o => o.selected ).map( o => o.value ) )"></select>
