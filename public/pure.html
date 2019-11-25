@@ -58,42 +58,52 @@
 
                      ${dataset.map( line => data_to_donut_segment( line ) ).join("")}
                  </svg>`;
-             }
-         };
+                 }
+                 };
 
-         let current_period;
-         let granularity = 3;
+                 let current_period;
+                 let granularity = 3;
 
-         const Controls = {
-             period: {
+                 const Controls = {
+                 period: {
                  set: ( period ) => {
-                     current_period = period;
-                     const months = { 0:  'Janvier',
-                                      1:  'Février',
-                                      2:  'Mars',
-                                      3:  'Avril',
-                                      4:  'Mai',
-                                      5:  'Juin',
-                                      6:  'Juillet',
-                                      7:  'Août',
-                                      8:  'Septembre',
-                                      9:  'Octobre',
-                                      10: 'Novembre',
-                                      11: 'Décembre' };
-                     document.querySelector( "#period #display" ).innerHTML = `${months[ current_period.getMonth() ]} ${current_period.getFullYear()}`;
+                 current_period = period;
+                 const months = { 0:  'Janvier',
+                 1:  'Février',
+                 2:  'Mars',
+                 3:  'Avril',
+                 4:  'Mai',
+                 5:  'Juin',
+                 6:  'Juillet',
+                 7:  'Août',
+                 8:  'Septembre',
+                 9:  'Octobre',
+                 10: 'Novembre',
+                 11: 'Décembre' };
+                 document.querySelector( "#period #display" ).innerHTML = `${months[ current_period.getMonth() ]} ${current_period.getFullYear()}`;
 
-                     monthly();
+                 monthly();
                  },
                  get: () => current_period,
                  prev: () => {
-                     current_period.setMonth( current_period.getMonth() - 1 );
-                     Controls.period.set( current_period );
+                 current_period.setMonth( current_period.getMonth() - 1 );
+                 Controls.period.set( current_period );
                  },
                  next: () => {
-                     current_period.setMonth( current_period.getMonth() + 1 );
-                     Controls.period.set( current_period );
+                 current_period.setMonth( current_period.getMonth() + 1 );
+                 Controls.period.set( current_period );
                  },
-             },
+                 },
+                 accounts: {
+                 init: async () => {
+                 let accounts = await API.accounts();
+
+                 let account_to_option = ( account ) => `<option value="${account.join(':')}">${account.join(':')}</option>`;
+                 document.querySelector("#accounts").innerHTML = `<select multiple name="accounts" id="lstaccounts">
+                     ${accounts.map( account => account_to_option( account )).join('')}
+                 </select>`;
+                 }
+             }
              /* granularity: {
               *     set: ( value ) => {
               *         if ( !isNaN( parseInt( value ) ) ) {
@@ -134,12 +144,19 @@
                  <input oninput="Controls.granularity.set( this.value );">
                  </div> -->
         </div>
+        <div id="accounts">
+        </div>
         <div id="month">
             <div id="donut" style="height: 256; width: 256;"></div>
         </div>
 
         <script>
-         Controls.period.set( new Date() );
+         (async () => {
+             await Controls.accounts.init();
+             console.log( await API.graph_values( "", ["Expenses", "Income"].join(" "), "monthly" ) )
+
+             await Controls.period.set( new Date() );
+         })();
         </script>
     </body>
 </html>
