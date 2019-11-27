@@ -1,6 +1,10 @@
 name: credger
 version: 1.99
 
+development_dependencies:
+  ameba:
+    github: crystal-ameba/ameba
+
 dependencies:
   kemal:
     github: kemalcr/kemal
