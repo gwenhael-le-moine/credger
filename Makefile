@@ -1,7 +1,7 @@
 all: credger public/js/app.min.js
 
 credger: credger.cr ledger.cr shard.lock
-	crystal build $<
+	crystal build --release $<
 
 public/js/app.js: public/ts/app.ts public/ts/services/API.ts public/ts/components/dashboard.ts public/ts/components/bucket.ts
 	-./public/vendor/node_modules/.bin/tsc --project ./public/tsconfig.json
