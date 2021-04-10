@@ -7,11 +7,19 @@ class Ledger
                   ledger_file : String = ENV[ "LEDGER_FILE" ] ||= "${ENV[ \"HOME\" ]}/org/comptes.ledger" )
     @binary = binary
     @file = ledger_file
+
+    @cache = Hash(String, String).new
   end
 
   def run( options : String, command : String = "", command_parameters : String = "" ) : String
-    STDERR.puts "#{@binary} -f #{@file} #{options} #{command} #{command_parameters}"
-    `#{@binary} -f #{@file} #{options} #{command} #{command_parameters}`
+    command = "#{@binary} -f #{@file} #{options} #{command} #{command_parameters}"
+    STDERR.puts command
+
+    mtime = File.info(@file).modification_time
+    key = "#{mtime}#{command}"
+    @cache[ key ] = `#{command}` unless @cache.has_key?( key )
+
+    @cache[ key ]
   end
 
   def version : String
