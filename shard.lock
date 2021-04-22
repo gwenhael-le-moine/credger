@@ -1,8 +1,8 @@
 version: 2.0
 shards:
   ameba:
-    github: crystal-ameba/ameba
-    version: 0.10.1
+    git: https://github.com/crystal-ameba/ameba.git
+    version: 0.14.3
 
   exception_page:
     git: https://github.com/crystal-loot/exception_page.git
