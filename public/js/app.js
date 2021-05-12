@@ -1,3 +1,126 @@
+var app = angular.module('app',
+  ['ui.router',
+    'nvd3',
+    'angularMoment',
+    'chieffancypants.loadingBar',
+    'rzSlider',
+  ])
+  .config(['$stateProvider', '$urlRouterProvider',
+    function($stateProvider, $urlRouterProvider) {
+      $stateProvider
+        .state('app', {
+          url: '',
+          component: 'dashboard'
+        });
+    }
+  ]);
+
+
+// BUCKET
+app.component('bucket',
+  {
+    bindings: {
+      categories: '<',
+      period: '<'
+    },
+    controller: ['$filter', 'API',
+      function($filter, API) {
+        let ctrl = this;
+        ctrl.depth = 99;
+
+        ctrl.graph_options = {
+          chart: {
+            type: 'multiBarHorizontalChart',
+            height: 600,
+            margin: {
+              top: 20,
+              right: 20,
+              bottom: 20,
+              left: 200
+            },
+            x: (d) => { return d.account; },
+            y: (d) => { return d.amount; },
+            valueFormat: (d) => { return `${d} €`; },
+            showYAxis: false,
+            showValues: true,
+            showLegend: true,
+            showControls: false,
+            showTooltipPercent: true,
+            duration: 500,
+            labelThreshold: 0.01,
+            labelSunbeamLayout: true,
+            labelsOutside: true,
+            multibar: {
+              dispatch: {
+                elementClick: (event) => {
+                  API.register(ctrl.period, event.data.account)
+                    .then(function success(response) {
+                      let format_transaction = (transaction) => {
+                        return `
+  <tr>
+    <td>${transaction.date}</td>
+    <td>${transaction.payee}</td>
+    <td style="text-align: right;">${transaction.amount} ${transaction.currency}</td>
+  </tr>`;
+                      };
+
+                      swal({
+                        title: response.data.key,
+  html: `
+  <table style="width: 100%;">
+    <thead>
+      <tr>
+        <td>Date</td><td>Payee</td><td>Amount</td>
+      </tr>
+    </thead>
+    <tbody>
+      ${response.data.values.map(function(transaction) { return format_transaction(transaction); }).join("")}
+    </tbody>
+    <tfoot><td></td><td>Total</td><td style="text-align: right;">${event.data.amount} €</td></tfoot>
+  </table>`});
+                    }, function error(response) { alert("error!"); });
+                }
+              }
+            }
+          }
+        };
+
+        ctrl.$onChanges = (changes) => {
+          if (changes.period && changes.period.currentValue != undefined) {
+            API.balance(ctrl.period, ctrl.categories, ctrl.depth)
+              .then((response) => {
+                ctrl.raw_data = _(response.data)
+                  .sortBy((account) => { return account.name; });
+
+                ctrl.graph_options.chart.height = 60 + (25 * ctrl.raw_data.length);
+
+                ctrl.data = ctrl.categories.split(' ').map((category) => {
+                  return {
+                    key: category,
+                    values: _(ctrl.raw_data).select((line) => { return line.account.match(`^${category}:.*`); })
+                  }
+                })
+              });
+          }
+        };
+      }
+    ],
+
+    template: `
+  <div class="bucket">
+    <div class="content">
+      <div class="graph">
+        <nvd3 data="$ctrl.data"
+              options="$ctrl.graph_options">
+        </nvd3>
+      </div>
+    </div>
+  </div>
+`
+  });
+
+
+// DASHBOARD
 app.component('dashboard',
   {
     controller: ['$filter', 'API',
@@ -215,3 +338,44 @@ return `
   </div>
 `
   });
+
+
+// APIS
+app.service('API',
+  ['$http',
+    function($http) {
+      let API = this;
+
+      API.balance = function(period, categories, depth) {
+        return $http.get('/api/ledger/balance', {
+          params: {
+            period: period,
+            categories: categories,
+            depth: depth
+          }
+        });
+      };
+
+      API.register = function(period, categories) {
+        return $http.get('/api/ledger/register', {
+          params: {
+            period: period,
+            categories: categories
+          }
+        });
+      };
+
+      API.graph_values = function(period, granularity, categories) {
+        return $http.get('/api/ledger/graph_values', {
+          params: {
+            period: period,
+            granularity: granularity,
+            categories: categories
+          }
+        });
+      };
+
+      API.accounts = _.memoize(function() {
+        return $http.get('/api/ledger/accounts');
+      });
+    }]);

@@ -1,6 +1,5 @@
 /lib
 /public/vendor/node_modules
 /credger
-/public/js
 /.shards
 /bin/
