@@ -98,8 +98,8 @@ app.component('bucket',
                                                        return {
                                                            key: category,
                                                            values: _(ctrl.raw_data).select((line) => { return line.account.match(`^${category}:.*`); })
-                                                       }
-                                                   })
+                                                       };
+                                                   });
                                                });
                                        }
                                    };
@@ -194,9 +194,7 @@ app.component('dashboard',
                                                            interactiveLayer: {
                                                                dispatch: {
                                                                    elementClick: (t) => {
-                                                                       console.log(ctrl.period)
                                                                        ctrl.period = t.pointXValue;
-                                                                       console.log(ctrl.period)
                                                                    }
                                                                },
                                                                tooltip: {
@@ -281,7 +279,7 @@ app.component('dashboard',
                                                        name: account[0],
                                                        depth: _(['Expenses']).contains(account[0]) ? 2 : _(['Income']).contains(account[0]) ? 1 : 0,
                                                        max_depth: _.chain(ctrl.raw_accounts)
-                                                           .select((account2) => { return account2[0] == account[0] })
+                                                           .select((account2) => { return account2[0] == account[0]; })
                                                            .reduce((memo, account3) => { return account3.length > memo ? account3.length : memo; }, 0)
                                                            .value()
                                                    };
