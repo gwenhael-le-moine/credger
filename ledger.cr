@@ -3,23 +3,28 @@ require "csv"
 
 # Crystal wrapper module for calling ledger
 class Ledger
+  @last_mtime : Time
+
   def initialize( binary : String = "ledger",
                   ledger_file : String = ENV[ "LEDGER_FILE" ] ||= "${ENV[ \"HOME\" ]}/org/comptes.ledger" )
     @binary = binary
     @file = ledger_file
+    @last_mtime = File.info(@file).modification_time
 
     @cache = Hash(String, String).new
   end
 
   def run( options : String, command : String = "", command_parameters : String = "" ) : String
     command = "#{@binary} -f #{@file} #{options} #{command} #{command_parameters}"
-    STDERR.puts command
 
     mtime = File.info(@file).modification_time
-    key = "#{mtime}#{command}"
-    @cache[ key ] = `#{command}` unless @cache.has_key?( key )
+    if @last_mtime < mtime || !@cache.has_key?( command )
+      @last_mtime = mtime
 
-    @cache[ key ]
+      @cache[ command ] = `#{command}`
+    end
+
+    @cache[ command ]
   end
 
   def version : String
