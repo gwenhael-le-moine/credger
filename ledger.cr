@@ -6,7 +6,7 @@ class Ledger
   @last_mtime : Time
 
   def initialize( binary : String = "ledger",
-                  ledger_file : String = ENV[ "LEDGER_FILE" ] ||= "${ENV[ \"HOME\" ]}/org/comptes.ledger" )
+                  ledger_file : String = ENV[ "LEDGER_FILE" ] ||= "#{ENV[ "HOME" ]}/org/comptes.ledger" )
     @binary = binary
     @file = ledger_file
     @last_mtime = File.info(@file).modification_time
