@@ -5,11 +5,9 @@ require "./ledger"
 ENV["CREDGER_CURRENCY"] ||= "€"
 ENV["CREDGER_SEPARATOR"] ||= ","
 
-ENV["PORT"] ||= "3000"
+ENV["CREDGER_PORT"] ||= "3000"
 
 WD = File.dirname( Process.executable_path.to_s )
-
-ledger = Ledger.new
 
 public_folder( "#{WD}/public" )
 
@@ -19,6 +17,8 @@ get "/" do |env|
 
   send_file( env, "#{WD}/public/index.html" )
 end
+
+ledger = Ledger.new
 
 get "/api/ledger/version" do |env|
   env.response.content_type = "text"
@@ -59,4 +59,4 @@ get "/api/ledger/register" do |env|
     .to_json
 end
 
-Kemal.run( ENV["PORT"].to_i )
+Kemal.run( ENV["CREDGER_PORT"].to_i )
