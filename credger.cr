@@ -4,12 +4,13 @@ require "./ledger"
 
 ENV["CREDGER_CURRENCY"] ||= "€"
 ENV["CREDGER_SEPARATOR"] ||= ","
-
 ENV["CREDGER_PORT"] ||= "3000"
+ENV["CREDGER_VERBOSE"] ||= "false"
 
 WD = File.dirname( Process.executable_path.to_s )
 
 public_folder( "#{WD}/public" )
+logging ENV["CREDGER_VERBOSE"] == "true"
 
 # Matches GET "http://host:port/"
 get "/" do |env|
