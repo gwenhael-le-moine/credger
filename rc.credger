@@ -1,0 +1,54 @@
+#!/bin/bash
+#Slackware startup deamon script
+
+# Name of Service
+NAME="credger"
+
+# Command to run
+CMD="/home/gwh/www/credger/credger"
+
+# user used to run the daemon
+USERNAME=gwh
+
+# Process name of daemon, for killing it.
+PROCESSNAME=$(basename $CMD)
+
+# Option to run with deamon
+OPTIONS=" "
+
+PIDFILE=/var/run/credger.pid
+
+func_stop() {
+    [ -e $PIDFILE ] && kill $(cat $PIDFILE) && rm $PIDFILE
+}
+
+func_start() {
+    echo -n "Starting $NAME ... "
+    LEDGER_FILE=/home/gwh/org/comptes.ledger sudo -u $USERNAME $CMD &
+    echo $! > $PIDFILE
+}
+
+
+case $1 in
+    "start")
+        func_start
+        ;;
+
+    "stop")
+        func_stop
+        ;;
+
+    "restart")
+        func_stop
+        sleep 2
+        func_start
+        ;;
+
+    "status")
+        [ -e $PIDFILE ] && echo "$NAME running" || echo "$NAME NOT running"
+        ;;
+
+    *)
+        echo "Usage; start|stop|restart"
+        ;;
+esac
