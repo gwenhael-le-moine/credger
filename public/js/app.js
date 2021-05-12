@@ -373,7 +373,7 @@ app.service('API',
                      });
                  };
 
-                 API.accounts = _.memoize(function() {
+                 API.accounts = function() {
                      return $http.get('/api/ledger/accounts');
-                 });
+                 };
              }]);

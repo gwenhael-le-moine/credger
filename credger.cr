@@ -15,7 +15,7 @@ public_folder( "#{WD}/public" )
 get "/" do |env|
   env.response.content_type = "text/html"
 
-  send_file( env, "#{WD}/public/index.html" )
+  send_file( env, "#{WD}/public/angularjs.html" )
 end
 
 ledger = Ledger.new
