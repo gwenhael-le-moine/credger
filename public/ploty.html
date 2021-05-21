@@ -5,6 +5,8 @@
         <!-- Plotly.js -->
         <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
         <script>
+         let selected_accounts = [];
+
          const API = {
              fetch: async ( endpoint, params = {} ) => {
                  let url = new URL( endpoint, `${location.protocol}//${location.host}` );
@@ -22,16 +24,6 @@
          }
 
          const Utils = {
-             text_to_color: text => {
-                 let hash = 0
-                 for (let i = 0; i < text.length; i++)
-                     hash = (((hash << 5) - hash) + text.charCodeAt(i)) | 0;
-                 hash = Math.abs( hash );
-
-                 let shash = hash.toString(16).substr(0, 6).padEnd( 6, '0' );
-
-                 return `#${shash}`;
-             },
              readable_date: date => {
                  const months = { 0: 'Janvier', 1: 'Février', 2: 'Mars', 3: 'Avril', 4: 'Mai', 5: 'Juin', 6: 'Juillet', 7: 'Août', 8: 'Septembre', 9: 'Octobre', 10: 'Novembre', 11: 'Décembre' };
 
@@ -39,155 +31,69 @@
              }
          };
 
-         const UI = {
-             /* https://medium.com/@heyoka/scratch-made-svg-donut-pie-charts-in-html5-2c587e935d72 */
-             donut: ( element, dataset ) => {
-                 const thickness = 9;
-                 let filed_percent = 0;
-                 const data_to_donut_segment = ( data ) => {
-                     if ( data.amount > 0 ) {
-                         const stroke_dashoffset = ( percent ) => {
-                             let offset = 100 - filed_percent;
-
-                             return offset > 100 ? offset - 100 : offset;
-                         };
-
-                         const donut_segment = `<circle class="donut-segment ${data.account.split(':').join(' ')}" cx="21" cy="21" r="15.91549430918954" fill="transparent" stroke="${data.color}" stroke-width="${thickness}" stroke-dasharray="${data.percent} ${100 - data.percent}" stroke-dashoffset="${stroke_dashoffset( data.percent )}"><title>${data.tooltip}</title></circle>`;
-                         filed_percent += data.percent;
-
-                         return donut_segment;
-                     } else {
-                         return '';
-                     }
-                 };
-
-                 element.innerHTML = `<svg width="100%" height="100%" viewBox="0 0 42 42" class="donut">
-                     <circle class="donut-hole" cx="21" cy="21" r="15.91549430918954" fill="#fff"></circle>
-                     <circle class="donut-ring" cx="21" cy="21" r="15.91549430918954" fill="transparent" stroke="#d2d3d4" stroke-width="${thickness}"></circle>
-
-                     ${dataset.map( line => data_to_donut_segment( line ) ).join("")}
-                 </svg>`;
-             }
-         };
-
-         let selected_accounts = [];
-         let current_period;
-
          const Controls = {
-             main_graph: {
-                 init: () => Controls.main_graph.set( selected_accounts ),
-                 set: async accounts => {
-                     console.log(accounts)
-                     /* 1. get graph_values for accounts */
-                     let values = await API.graph_values( "", accounts.join(" "), "monthly" );
-
-                     /* 2. forEach account build a {
-                        x: ["2020-01", "2020-02", "2020-03", "2020-04"],
-                        y: [1, 4, 9, 16],
-                        name: 'Account1',
-                        type: 'bar'
-                        } */
-                     let graph_accounts = Object.keys(values).map( act => {
-                         return {
-                             name: act,
-                             type: "bar",
-                             x: values[ act ].map( reg => reg.date),
-                             y: values[ act ].map( reg => reg.amount)
-                         };
-                     });
-
-                     var layout = {
-                         xaxis: {title: 'Dates'},
-                         yaxis: {title: 'Amount'},
-                         barmode: 'relative',
-                         title: 'Relative Barmode'
-                     };
-
-                     Plotly.newPlot('mainGraph', graph_accounts, layout);
-                 }
-             },
-             period: {
-                 init: () => Controls.period.set( new Date() ),
-                 set: period => {
-                     current_period = period;
-
-                     document.querySelector( "#period #display" ).innerHTML = Utils.readable_date( current_period );
-
-                     monthly( current_period, selected_accounts );
-                 },
-                 get: () => current_period,
-                 prev: () => {
-                     current_period.setMonth( current_period.getMonth() - 1 );
-                     Controls.period.set( current_period );
-                 },
-                 next: () => {
-                     current_period.setMonth( current_period.getMonth() + 1 );
-                     Controls.period.set( current_period );
-                 },
-             },
-             accounts: {
+             accounts_list: {
+                 ui_id: "accounts",
                  init: async () => {
-                     let account_to_option = ( account, selected ) => `<option value="${account.join(':')}" ${selected ? "selected" : ""}>${account.join(':')}</option>`;
                      let accounts = await API.accounts();
-                     let select = document.querySelector("select#accounts");
-                     select.innerHTML = '';
+                     let ui_accounts = document.querySelector(`#${Controls.accounts_list.ui_id}`);
+                     ui_accounts.innerHTML = '';
+
+                     let account_to_option = ( account, selected ) => `<option value="${account.join(':')}" ${selected ? "selected" : ""}>${account.join(':')}</option>`;
 
                      for ( let i = 1 ; i < accounts.reduce( (memo, a) => a.length > memo ? a.length : memo, 0 ) ; i++  ) {
-                         select.innerHTML += `<optgroup label="Depth: ${i}">${accounts.filter( a => a.length == i ).map( account => account_to_option( account, i == 1 )).join('')}</optgroup>`;
+                         ui_accounts.innerHTML += `
+<optgroup label="Depth: ${i}">
+  ${accounts.filter( a => a.length == i ).map( account => account_to_option( account, ((account.length == 1 && account[0] == "Assets") || (account.length == 2 && account[0] == "Expenses")))).join('')}
+</optgroup>`;
                      }
 
-                     let ui_accounts = document.getElementById("accounts")
-                     ui_accounts.addEventListener( 'change',
-                                                   event => Controls.accounts.onchange( event.target ) );
-                     Controls.accounts.onchange( ui_accounts );
+                     ui_accounts.addEventListener( 'change', event => Controls.accounts_list.onchange( event.target ) );
+                     Controls.accounts_list.onchange( ui_accounts );
                  },
                  onchange: element => {
                      selected_accounts = Array.from( element.options ).filter( o => o.selected ).map( o => o.value );
 
                      Controls.main_graph.set( selected_accounts );
-                     monthly( current_period, selected_accounts );
                  }
-             }
-         };
+             },
+             main_graph: {
+                 ui_id: 'mainGraph',
+                 init: () => Controls.main_graph.set( selected_accounts ),
+                 set: async accounts => {
+                     /* 1. get graph_values for accounts */
+                     let values = await API.graph_values( "", accounts.join(" "), "monthly" );
 
-         const monthly = async ( period, categories ) => {
-             let balance = await API.balance( period.toISOString().split("T")[0].slice( 0, -3 ), categories.join(" "), 999 )
-             const total = balance.reduce( (memo, line) => memo + line.amount, 0 );
-
-             UI.donut( document.querySelector( `#month #donut` ),
-                       balance.sort( (a, b) => b.amount - a.amount )
-                              .map( line => {
-                                  line.color = Utils.text_to_color( line.account );
-                                  line.percent = ( line.amount / total ) * 100;
-                                  line.tooltip = `${line.account} : ${line.amount} €`;
-
-                                  return line;
-                              } ) );
+                     Plotly.newPlot( Controls.main_graph.ui_id,
+                                     Object.keys(values).map( act => {
+                                         return {
+                                             name: act,
+                                             type: "bar",
+                                             x: values[ act ].map( reg => Utils.readable_date( new Date( reg.date ) ) ),
+                                             y: values[ act ].map( reg => reg.amount)
+                                         };
+                                     }),
+                                     {
+                                         xaxis: {title: 'Dates'},
+                                         yaxis: {title: 'Montant'},
+                                         barmode: 'relative',
+                                         title: 'Relative Barmode'
+                     });
+                 }
+             },
          };
         </script>
     </head>
     <body>
-        <div id="controls">
-            <div id="period">
-                <button onclick="Controls.period.prev()">-</button>
-                <button onclick="Controls.period.next()">+</button>
-                <h3 id="display"></h3>
-            </div>
-        </div>
 
-        <select id="accounts" name="accounts" multiple size="20"></select>
+        <select id="accounts" name="accounts" multiple size="20"  style="float: left; width: 19%;"></select>
 
-        <div id="mainGraph"></div>
-
-        <div id="month">
-            <div id="donut" style="height: 256; width: 256;"></div>
-        </div>
+        <div id="mainGraph" style="float: right; width: 79%;" ></div>
 
         <script>
          (async () => {
-             await Controls.accounts.init();
+             await Controls.accounts_list.init();
              Controls.main_graph.init();
-             Controls.period.init();
          })();
         </script>
     </body>
