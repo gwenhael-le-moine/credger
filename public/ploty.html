@@ -23,14 +23,6 @@
              accounts: () => API.fetch( "/api/ledger/accounts" )
          }
 
-         const Utils = {
-             readable_date: date => {
-                 const months = { 0: 'Janvier', 1: 'Février', 2: 'Mars', 3: 'Avril', 4: 'Mai', 5: 'Juin', 6: 'Juillet', 7: 'Août', 8: 'Septembre', 9: 'Octobre', 10: 'Novembre', 11: 'Décembre' };
-
-                 return `${months[ date.getMonth() ]} ${date.getFullYear()}`;
-             }
-         };
-
          const Controls = {
              accounts_list: {
                  init: async ( ui_id ) => {
@@ -73,7 +65,7 @@
                      let onchange = () => {
                          selected_accounts = Object.keys( accounts_depths )
                                                    .filter( act => accounts_depths[act] > 0 )
-                                                   .map( act => accounts.filter( a => a[0] == act && a.length == accounts_depths[act] ) )
+                                                   .map( act => accounts.filter( a => a[0] == act && a.length <= accounts_depths[act] ) )
                                                    .flat();
 
                          Controls.main_graph.set( selected_accounts );
@@ -89,7 +81,7 @@
 
                          accounts_depths[ act[0] ] = val;
 
-                         return `<div style="float: left; width: 100%;"><label for="myRange-${act[0]}" style="float: left;"">${act}</label><input style="float: right;" type="range" min="0" max="${max_depth}" value="${val}" class="slider" name="myRange-${act[0]}" id="myRange-${act[0]}"></div>`;
+                         return `<div style="float: left; width: 100%;"><label for="myRange-${act[0]}" style="float: left;">${act}</label><input style="float: right;" type="range" min="0" max="${max_depth}" value="${val}" ${val == 0 ? 'disabled' : ''} class="slider" name="myRange-${act[0]}" id="myRange-${act[0]}"></div>`;
                      }).join('');
 
                      Object.keys( accounts_depths ).forEach( act => {
@@ -108,14 +100,14 @@
              main_graph: {
                  init: ( ui_id ) => {
                      let layout = {
-                         xaxis: {title: 'Dates'},
+                         xaxis: { title: 'Dates',
+                                  tickangle: -45 },
                          yaxis: {title: 'Montant'},
                          barmode: 'relative',
-                         title: 'Relative Barmode'
+                         title: '€'
                      };
 
                      Controls.main_graph.set = async ( accounts ) => {
-                         console.log(accounts)
                          if (accounts.length < 1)
                              return;
 
@@ -128,7 +120,7 @@
                                                  return {
                                                      name: act,
                                                      type: "bar",
-                                                     x: v.map( reg => new Date( reg.date ) ), //Utils.readable_date( new Date( reg.date ) ) ),
+                                                     x: v.map( reg => new Date( reg.date ) ),
                                                      y: v.map( reg => reg.amount)
                                                  };
                                              } ),
